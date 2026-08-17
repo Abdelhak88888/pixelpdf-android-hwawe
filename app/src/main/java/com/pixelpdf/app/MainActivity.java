@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView v, String u) {
                 v.loadUrl("javascript:(function() {" +
+                    "window.downloadGeneratedFile = function(d, n) { AndroidBridge.downloadFile(d, n, 'Saved'); };" +
                     "window.saveAs = function(b, n) { var r = new FileReader(); r.onloadend = function() { AndroidBridge.downloadFile(r.result, n, 'Saved'); }; r.readAsDataURL(b); };" +
                     "window.watchAd = function() { AndroidBridge.showRewardedAd(); };" +
                     "window.checkAndShowInterstitial = function() { AndroidBridge.showInterstitialAd(); };" +
