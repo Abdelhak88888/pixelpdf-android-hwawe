@@ -23,7 +23,7 @@ import com.huawei.hms.ads.HwAds;
 import com.huawei.hms.ads.InterstitialAd;
 import com.huawei.hms.ads.reward.Reward;
 import com.huawei.hms.ads.reward.RewardAd;
-import com.huawei.hms.ads.reward.RewardAdStatusListener;
+import com.huawei.hms.ads.reward.RewardAdLoadListener;
 
 import java.io.OutputStream;
 
@@ -133,10 +133,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void loadRewarded() {
         RewardAd ad = new RewardAd(this, AD_REWARDED);
-        ad.loadAd(new AdParam.Builder().build(), new RewardAdStatusListener() {
+        ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
             @Override
             public void onRewardAdLoaded() {
-                ad.show(MainActivity.this, new RewardAdStatusListener() {
+                ad.show(MainActivity.this, new RewardAdLoadListener() {
                     @Override
                     public void onRewarded(Reward r) {
                         webView.loadUrl("javascript:if(window.onAdRewarded) onAdRewarded();");
