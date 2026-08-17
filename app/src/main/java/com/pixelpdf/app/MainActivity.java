@@ -18,7 +18,6 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import com.huawei.hms.ads.HwAds;
 import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity {
@@ -28,21 +27,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        try { HwAds.init(this); } catch (Exception e) {}
         webView = new WebView(this);
         setContentView(webView);
         WebSettings s = webView.getSettings();
-        s.setJavaScriptEnabled(true); 
-        s.setDomStorageEnabled(true);
-        s.setAllowFileAccess(true); 
-        s.setAllowContentAccess(true);
-        s.setDatabaseEnabled(true); 
-        s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true);
+        s.setAllowFileAccess(true); s.setAllowContentAccess(true);
+        s.setDatabaseEnabled(true); s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void downloadFile(String b64, String name, String msg) { saveFile(b64, name, msg); }
-        }, "AndroidBridge");
+        }, "Android");
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -62,9 +57,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView v, String u) {
                 v.loadUrl("javascript:(function() {" +
-                    "  window.smartDownload = function(d, f) { if(window.AndroidBridge) AndroidBridge.downloadFile(d, f, 'Saved'); };" +
+                    "  window.smartDownload = function(d, f) { if(window.Android) Android.downloadFile(d, f, 'Saved'); };" +
                     "  window.saveAs = window.smartDownload;" +
-                    "  if(typeof updateCreditsUI === 'function') updateCreditsUI();" +
+                    "  window.downloadOCR = function(fmt) {" +
+                    "    const el = document.getElementById('ocr-text-result');" +
+                    "    if (el) { Android.downloadFile('data:text/plain;base64,' + btoa(unescape(encodeURIComponent(el.innerText))), 'ocr_result.txt', 'TXT Saved'); }" +
+                    "  };" +
                     "})()");
             }
         });
@@ -80,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
             if (Build.VERSION.SDK_INT >= 29) v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
             Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
             if (u != null) { OutputStream o = getContentResolver().openOutputStream(u); o.write(bt); o.close();
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ " + msg, Toast.LENGTH_SHORT).show()); }
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, \"✅ \" + msg, Toast.LENGTH_SHORT).show()); }
         } catch (Exception e) {}
     }
 
