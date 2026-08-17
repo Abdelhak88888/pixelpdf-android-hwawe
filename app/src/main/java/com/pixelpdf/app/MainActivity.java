@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
                         OutputStream o = getContentResolver().openOutputStream(u);
                         o.write(bt);
                         o.close();
-                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ Saved to Downloads", Toast.LENGTH_LONG).show());
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ File saved to Downloads", Toast.LENGTH_LONG).show());
                     }
                 } catch (Exception e) {
                     runOnUiThread(() -> Toast.makeText(MainActivity.this, "Download error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
@@ -88,8 +88,8 @@ public class MainActivity extends AppCompatActivity {
             @JavascriptInterface
             public void buyPro() {
                 runOnUiThread(() -> new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("PRO Version")
-                    .setMessage("In-App Purchases via Huawei Store will be active soon.")
+                    .setTitle("PRO Plan")
+                    .setMessage("In-App Purchases will be activated via Huawei IAP.")
                     .setPositiveButton("OK", null)
                     .show());
             }
@@ -98,6 +98,7 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+                // إخفاء عنوان file:// وإظهار الرسالة فقط
                 new AlertDialog.Builder(MainActivity.this)
                     .setMessage(message)
                     .setPositiveButton(android.R.string.ok, (dialog, which) -> result.confirm())
@@ -117,19 +118,33 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // ربط التنزيلات بـ AndroidBridge عند اكتمال تحميل الصفحة بدون تعديل ملف HTML
+                view.loadUrl("javascript:(function() {" +
+                    "window.downloadGeneratedFile = function(data, filename) {" +
+                        "if (window.AndroidBridge && window.AndroidBridge.downloadFile) {" +
+                            "window.AndroidBridge.downloadFile(data, filename, 'Saved');" +
+                        "}" +
+                    "};" +
+                "})()");
+            }
+        });
+
         webView.loadUrl("file:///android_asset/index.html");
     }
 
     private void loadRewarded() {
-        Toast.makeText(this, "Loading Huawei Ad...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Loading Ad...", Toast.LENGTH_SHORT).show();
         RewardAd ad = new RewardAd(this, AD_REWARDED);
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
             public void onRewardAdLoaded() {
                 ad.show(MainActivity.this, new RewardAdStatusListener() {
                     public void onRewardAdOpened() {}
                     public void onRewardAdFailedToShow(int errorCode) {
-                        Toast.makeText(MainActivity.this, "Failed to display ad.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Ad failed to show.", Toast.LENGTH_SHORT).show();
                     }
                     public void onRewardAdClosed() {}
                     public void onRewarded(Reward r) {
@@ -138,7 +153,7 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
             public void onRewardAdFailedToLoad(int errorCode) {
-                Toast.makeText(MainActivity.this, "No Ads available right now (Code: " + errorCode + ")", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "No Ads available (Code: " + errorCode + ")", Toast.LENGTH_SHORT).show();
             }
         });
     }
