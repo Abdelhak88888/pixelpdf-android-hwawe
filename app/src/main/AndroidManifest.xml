@@ -1,11 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <application android:allowBackup="true" android:label="PixelPDF" android:supportsRtl="true" android:usesCleartextTraffic="true">
+
+    <application
+        android:allowBackup="true"
+        tools:replace="android:allowBackup"
+        android:label="PixelPDF"
+        android:supportsRtl="true"
+        android:usesCleartextTraffic="true">
+        
         <meta-data android:name="com.huawei.hms.client.appid" android:value="appid=118594439" />
-        <activity android:name=".MainActivity" android:exported="true" android:theme="@style/Theme.AppCompat.NoActionBar">
+        
+        <activity android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.AppCompat.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
