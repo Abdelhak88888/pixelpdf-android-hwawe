@@ -17,10 +17,8 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.huawei.hms.ads.AdParam;
 import com.huawei.hms.ads.HwAds;
 import com.huawei.hms.ads.InterstitialAd;
@@ -29,10 +27,7 @@ import com.huawei.hms.ads.reward.RewardAd;
 import com.huawei.hms.ads.reward.RewardAdLoadListener;
 import com.huawei.hms.ads.reward.RewardAdStatusListener;
 import com.huawei.hms.iap.Iap;
-import com.huawei.hms.iap.IapClient;
 import com.huawei.hms.iap.entity.PurchaseIntentReq;
-import com.huawei.hms.iap.entity.PurchaseIntentResult;
-
 import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity {
@@ -48,47 +43,39 @@ public class MainActivity extends AppCompatActivity {
         HwAds.init(this);
         webView = new WebView(this);
         setContentView(webView);
-
         WebSettings s = webView.getSettings();
-        s.setJavaScriptEnabled(true);
-        s.setDomStorageEnabled(true);
-        s.setAllowFileAccess(true);
-        s.setAllowContentAccess(true);
-        s.setDatabaseEnabled(true);
-        s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true);
+        s.setAllowFileAccess(true); s.setAllowContentAccess(true);
+        s.setDatabaseEnabled(true); s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
-            public void downloadFile(String b64, String name, String msg) {
-                saveFile(b64, name, msg);
-            }
+            public void downloadFile(String b64, String name, String msg) { saveFile(b64, name, msg); }
             @JavascriptInterface
             public void showRewardedAd() { runOnUiThread(() -> loadRewarded()); }
             @JavascriptInterface
             public void showInterstitialAd() { runOnUiThread(() -> loadInterstitial()); }
             @JavascriptInterface
-            public void buyProduct(String productId) { runOnUiThread(() -> startPurchase(productId)); }
+            public void buyProduct(String pid) { runOnUiThread(() -> startPurchase(pid)); }
         }, "AndroidBridge");
 
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
-                new AlertDialog.Builder(MainActivity.this).setMessage(message).setPositiveButton(android.R.string.ok, (d, w) -> result.confirm()).setCancelable(false).show();
+            public boolean onJsAlert(WebView v, String u, String m, JsResult r) {
+                new AlertDialog.Builder(MainActivity.this).setMessage(m).setPositiveButton(android.R.string.ok, (d, w) -> r.confirm()).setCancelable(false).show();
                 return true;
             }
             @Override
             public boolean onShowFileChooser(WebView w, ValueCallback<Uri[]> f, FileChooserParams p) {
-                filePathCallback = f;
-                Intent i = p.createIntent(); i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
-                startActivityForResult(Intent.createChooser(i, "Select Files"), 1);
-                return true;
+                filePathCallback = f; Intent i = p.createIntent(); i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                startActivityForResult(Intent.createChooser(i, "Select Files"), 1); return true;
             }
         });
 
         webView.setWebViewClient(new WebViewClient() {
             @Override
-            public void onPageFinished(WebView view, String url) {
-                view.loadUrl("javascript:(function() {" +
+            public void onPageFinished(WebView v, String u) {
+                v.loadUrl("javascript:(function() {" +
                     "window.saveAs = function(b, n) { var r = new FileReader(); r.onloadend = function() { AndroidBridge.downloadFile(r.result, n, 'Saved'); }; r.readAsDataURL(b); };" +
                     "window.watchAd = function() { AndroidBridge.showRewardedAd(); };" +
                     "window.checkAndShowInterstitial = function() { AndroidBridge.showInterstitialAd(); };" +
@@ -134,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
     private void startPurchase(String pid) {
         Iap.getIapClient(this).createPurchaseIntent(new PurchaseIntentReq(){{setProductId(pid);setPriceType(0);}})
         .addOnSuccessListener(res -> { try { res.getStatus().startResolutionForResult(MainActivity.this, REQ_CODE_BUY); } catch (Exception e) {} })
-        .addOnFailureListener(e -> Toast.makeText(this, "IAP Error", 0).show());
+        .addOnFailureListener(e -> Toast.makeText(this, "Huawei IAP not available", 0).show());
     }
 
     @Override
