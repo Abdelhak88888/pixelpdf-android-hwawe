@@ -120,21 +120,24 @@ public class MainActivity extends AppCompatActivity {
             if (Build.VERSION.SDK_INT >= 29) v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
             Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
             if (u != null) { OutputStream o = getContentResolver().openOutputStream(u); o.write(bt); o.close();
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, \"✅ \" + msg, Toast.LENGTH_SHORT).show()); }
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ " + msg, Toast.LENGTH_SHORT).show()); }
         } catch (Exception e) {
-            runOnUiThread(() -> Toast.makeText(MainActivity.this, \"Download Error: \" + e.getMessage(), Toast.LENGTH_SHORT).show());
+            runOnUiThread(() -> Toast.makeText(MainActivity.this, "Download Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
         }
     }
 
     private void loadRewarded() {
-        Toast.makeText(this, \"Connecting to Ad Server...\", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Connecting to Ad Server...", Toast.LENGTH_SHORT).show();
         RewardAd ad = new RewardAd(this, AD_REWARDED);
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
+            @Override
             public void onRewardAdLoaded() { ad.show(MainActivity.this, new RewardAdStatusListener() {
-                public void onRewarded(Reward r) { webView.loadUrl(\"javascript:grantReward();\"); }
+                @Override
+                public void onRewarded(Reward r) { webView.loadUrl("javascript:grantReward();"); }
             }); }
+            @Override
             public void onRewardAdFailedToLoad(int code) { 
-                Toast.makeText(MainActivity.this, \"Ad not ready yet (Code: \" + code + \")\", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "Ad not ready yet (Code: " + code + ")", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -151,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
     private void startPurchase(String pid) {
         Iap.getIapClient(this).createPurchaseIntent(new PurchaseIntentReq(){{setProductId(pid);setPriceType(0);}})
         .addOnSuccessListener(res -> { try { res.getStatus().startResolutionForResult(MainActivity.this, REQ_CODE_BUY); } catch (Exception e) {} })
-        .addOnFailureListener(e -> Toast.makeText(this, \"Huawei IAP not available\", 0).show());
+        .addOnFailureListener(e -> Toast.makeText(this, "Huawei IAP not available", Toast.LENGTH_SHORT).show());
     }
 
     @Override
@@ -163,8 +166,8 @@ public class MainActivity extends AppCompatActivity {
             }
             filePathCallback.onReceiveValue(res); filePathCallback = null;
         } else if (r == REQ_CODE_BUY && c == RESULT_OK) { 
-            Toast.makeText(this, \"✅ Purchase Successful!\", Toast.LENGTH_LONG).show(); 
-            webView.loadUrl(\"javascript:(function(){ isPro=true; localStorage.setItem('pixelpdf_pro','true'); updateCreditsUI(); closePlanModal(); })();\");
+            Toast.makeText(this, "✅ Purchase Successful!", Toast.LENGTH_LONG).show(); 
+            webView.loadUrl("javascript:(function(){ isPro=true; localStorage.setItem('pixelpdf_pro','true'); updateCreditsUI(); closePlanModal(); })();");
         } else super.onActivityResult(r, c, d);
     }
 }
