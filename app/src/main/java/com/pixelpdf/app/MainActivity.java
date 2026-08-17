@@ -32,7 +32,10 @@ import java.io.OutputStream;
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
+    
+    // Ad Unit IDs الحقيقيين من منصة Huawei
     private static final String AD_REWARDED = "f95ziipjhl";
+    private static final String AD_INTERSTITIAL = "w07e1f28c6";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,24 +56,30 @@ public class MainActivity extends AppCompatActivity {
             @JavascriptInterface
             public void downloadFile(String b64, String name, String msg) {
                 try {
-                    if (b64.startsWith("data:")) b64 = b64.substring(b64.indexOf(",") + 1);
+                    if (b64 == null || b64.isEmpty()) return;
+                    if (b64.contains(",")) b64 = b64.substring(b64.indexOf(",") + 1);
                     byte[] bt = Base64.decode(b64, Base64.DEFAULT);
+                    
                     ContentValues v = new ContentValues();
                     v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
-                    String mime = "application/octet-stream";
-                    if (name.endsWith(".pdf")) mime = "application/pdf";
+                    String mime = "application/pdf";
+                    if (name.endsWith(".jpg") || name.endsWith(".jpeg")) mime = "image/jpeg";
+                    else if (name.endsWith(".png")) mime = "image/png";
                     v.put(MediaStore.MediaColumns.MIME_TYPE, mime);
-                    if (Build.VERSION.SDK_INT >= 29) v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                    
+                    if (Build.VERSION.SDK_INT >= 29) {
+                        v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                    }
 
                     Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
                     if (u != null) {
                         OutputStream o = getContentResolver().openOutputStream(u);
                         o.write(bt);
                         o.close();
-                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ Saved to Downloads", Toast.LENGTH_SHORT).show());
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ File saved to Downloads", Toast.LENGTH_LONG).show());
                     }
                 } catch (Exception e) {
-                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> Toast.makeText(MainActivity.this, "Download error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                 }
             }
 
@@ -81,11 +90,14 @@ public class MainActivity extends AppCompatActivity {
 
             @JavascriptInterface
             public void buyPro() {
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "In-App Purchases coming soon!", Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("In-App Purchases")
+                    .setMessage("Purchases via Huawei IAP will be available once approved.")
+                    .setPositiveButton("OK", null)
+                    .show());
             }
         }, "AndroidBridge");
 
-        // اخفاء عنوان file:// وإظهار Alert نقي
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
@@ -113,14 +125,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadRewarded() {
-        Toast.makeText(this, "Loading Huawei Ad...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Loading Ad...", Toast.LENGTH_SHORT).show();
         RewardAd ad = new RewardAd(this, AD_REWARDED);
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
             public void onRewardAdLoaded() {
                 ad.show(MainActivity.this, new RewardAdStatusListener() {
                     public void onRewardAdOpened() {}
                     public void onRewardAdFailedToShow(int errorCode) {
-                        Toast.makeText(MainActivity.this, "Failed to display ad.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Ad failed to display.", Toast.LENGTH_SHORT).show();
                     }
                     public void onRewardAdClosed() {}
                     public void onRewarded(Reward r) {
@@ -129,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
             public void onRewardAdFailedToLoad(int errorCode) {
-                Toast.makeText(MainActivity.this, "No Ads available right now (Code " + errorCode + ")", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "No Ads available (Code: " + errorCode + ")", Toast.LENGTH_SHORT).show();
             }
         });
     }
