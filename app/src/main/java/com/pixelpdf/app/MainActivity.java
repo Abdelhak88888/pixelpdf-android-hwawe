@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
             @Override
-            public boolean onJsConfirm(WebView v, String u, String m, android.webkit.JsConfirmResult r) {
+            public boolean onJsConfirm(WebView v, String u, String m, JsResult r) {
                 new AlertDialog.Builder(MainActivity.this).setTitle("PixelPDF").setMessage(m)
                     .setPositiveButton(android.R.string.ok, (d, w) -> r.confirm())
                     .setNegativeButton(android.R.string.cancel, (d, w) -> r.cancel()).setCancelable(false).show();
@@ -134,6 +134,12 @@ public class MainActivity extends AppCompatActivity {
             public void onRewardAdLoaded() { ad.show(MainActivity.this, new RewardAdStatusListener() {
                 @Override
                 public void onRewarded(Reward r) { webView.loadUrl("javascript:grantReward();"); }
+                @Override
+                public void onRewardAdOpened() {}
+                @Override
+                public void onRewardAdFailedToShow(int e) {}
+                @Override
+                public void onRewardAdClosed() {}
             }); }
             @Override
             public void onRewardAdFailedToLoad(int code) { 
