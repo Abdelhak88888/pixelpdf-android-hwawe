@@ -62,7 +62,15 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onJsAlert(WebView v, String u, String m, JsResult r) {
-                new AlertDialog.Builder(MainActivity.this).setMessage(m).setPositiveButton(android.R.string.ok, (d, w) -> r.confirm()).setCancelable(false).show();
+                new AlertDialog.Builder(MainActivity.this).setTitle("PixelPDF").setMessage(m)
+                    .setPositiveButton(android.R.string.ok, (d, w) -> r.confirm()).setCancelable(false).show();
+                return true;
+            }
+            @Override
+            public boolean onJsConfirm(WebView v, String u, String m, android.webkit.JsConfirmResult r) {
+                new AlertDialog.Builder(MainActivity.this).setTitle("PixelPDF").setMessage(m)
+                    .setPositiveButton(android.R.string.ok, (d, w) -> r.confirm())
+                    .setNegativeButton(android.R.string.cancel, (d, w) -> r.cancel()).setCancelable(false).show();
                 return true;
             }
             @Override
@@ -80,6 +88,15 @@ public class MainActivity extends AppCompatActivity {
                     "    if (window.AndroidBridge) { AndroidBridge.downloadFile(data, filename, 'Saved successfully'); }" +
                     "  };" +
                     "  window.saveAs = window.smartDownload;" +
+                    "  window.downloadOCR = function(fmt) {" +
+                    "    const text = document.getElementById('ocr-text-result').innerText;" +
+                    "    if (fmt === 'txt') { AndroidBridge.downloadFile('data:text/plain;base64,' + btoa(unescape(encodeURIComponent(text))), 'ocr_result.txt', 'TXT Saved'); }" +
+                    "    else { window.print(); }" +
+                    "  };" +
+                    "  window.downloadPdfEditExtractedText = function() {" +
+                    "    const text = document.getElementById('pdfedit-extracttext-result').textContent;" +
+                    "    AndroidBridge.downloadFile('data:text/plain;base64,' + btoa(unescape(encodeURIComponent(text))), 'extracted_text.txt', 'TXT Saved');" +
+                    "  };" +
                     "  window.watchAd = function() { AndroidBridge.showRewardedAd(); };" +
                     "  window.checkAndShowInterstitial = function() { AndroidBridge.showInterstitialAd(); };" +
                     "  window.buyCredits = function(a, p) { AndroidBridge.buyProduct('credits_' + a); };" +
@@ -95,20 +112,30 @@ public class MainActivity extends AppCompatActivity {
             if (b64.contains(",")) b64 = b64.substring(b64.indexOf(",") + 1);
             byte[] bt = Base64.decode(b64, Base64.DEFAULT);
             ContentValues v = new ContentValues(); v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
-            v.put(MediaStore.MediaColumns.MIME_TYPE, name.endsWith(".pdf") ? "application/pdf" : "image/jpeg");
+            String mime = "application/octet-stream";
+            if (name.endsWith(".pdf")) mime = "application/pdf";
+            else if (name.endsWith(".jpg") || name.endsWith(".jpeg")) mime = "image/jpeg";
+            else if (name.endsWith(".txt")) mime = "text/plain";
+            v.put(MediaStore.MediaColumns.MIME_TYPE, mime);
             if (Build.VERSION.SDK_INT >= 29) v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
             Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
             if (u != null) { OutputStream o = getContentResolver().openOutputStream(u); o.write(bt); o.close();
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ " + msg, Toast.LENGTH_SHORT).show()); }
-        } catch (Exception e) {}
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, \"✅ \" + msg, Toast.LENGTH_SHORT).show()); }
+        } catch (Exception e) {
+            runOnUiThread(() -> Toast.makeText(MainActivity.this, \"Download Error: \" + e.getMessage(), Toast.LENGTH_SHORT).show());
+        }
     }
 
     private void loadRewarded() {
+        Toast.makeText(this, \"Connecting to Ad Server...\", Toast.LENGTH_SHORT).show();
         RewardAd ad = new RewardAd(this, AD_REWARDED);
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
             public void onRewardAdLoaded() { ad.show(MainActivity.this, new RewardAdStatusListener() {
-                public void onRewarded(Reward r) { webView.loadUrl("javascript:grantReward();"); }
+                public void onRewarded(Reward r) { webView.loadUrl(\"javascript:grantReward();\"); }
             }); }
+            public void onRewardAdFailedToLoad(int code) { 
+                Toast.makeText(MainActivity.this, \"Ad not ready yet (Code: \" + code + \")\", Toast.LENGTH_LONG).show();
+            }
         });
     }
 
@@ -124,7 +151,7 @@ public class MainActivity extends AppCompatActivity {
     private void startPurchase(String pid) {
         Iap.getIapClient(this).createPurchaseIntent(new PurchaseIntentReq(){{setProductId(pid);setPriceType(0);}})
         .addOnSuccessListener(res -> { try { res.getStatus().startResolutionForResult(MainActivity.this, REQ_CODE_BUY); } catch (Exception e) {} })
-        .addOnFailureListener(e -> Toast.makeText(this, "Huawei IAP not available", 0).show());
+        .addOnFailureListener(e -> Toast.makeText(this, \"Huawei IAP not available\", 0).show());
     }
 
     @Override
@@ -135,7 +162,9 @@ public class MainActivity extends AppCompatActivity {
                 else if (d.getData() != null) res = new Uri[]{d.getData()};
             }
             filePathCallback.onReceiveValue(res); filePathCallback = null;
-        } else if (r == REQ_CODE_BUY && c == RESULT_OK) { Toast.makeText(this, "✅ Success!", 0).show(); webView.reload(); }
-        else super.onActivityResult(r, c, d);
+        } else if (r == REQ_CODE_BUY && c == RESULT_OK) { 
+            Toast.makeText(this, \"✅ Purchase Successful!\", Toast.LENGTH_LONG).show(); 
+            webView.loadUrl(\"javascript:(function(){ isPro=true; localStorage.setItem('pixelpdf_pro','true'); updateCreditsUI(); closePlanModal(); })();\");
+        } else super.onActivityResult(r, c, d);
     }
 }
