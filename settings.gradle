@@ -14,5 +14,5 @@ dependencyResolutionManagement {
         maven { url 'https://developer.huawei.com/repo/' }
     }
 }
-rootProject.name = "PixelPDF"
+rootProject.name = 'PixelPDF'
 include ':app'
