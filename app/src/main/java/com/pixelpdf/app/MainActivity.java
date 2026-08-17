@@ -32,9 +32,12 @@ public class MainActivity extends AppCompatActivity {
         webView = new WebView(this);
         setContentView(webView);
         WebSettings s = webView.getSettings();
-        s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true);
-        s.setAllowFileAccess(true); s.setAllowContentAccess(true);
-        s.setDatabaseEnabled(true); s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        s.setJavaScriptEnabled(true); 
+        s.setDomStorageEnabled(true);
+        s.setAllowFileAccess(true); 
+        s.setAllowContentAccess(true);
+        s.setDatabaseEnabled(true); 
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
@@ -58,12 +61,10 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView v, String u) {
-                // إخفاء أي سبلاش سكرين في الـ HTML فوراً
                 v.loadUrl("javascript:(function() {" +
-                    "  const splash = document.getElementById('splash-screen') || document.querySelector('.splash');" +
-                    "  if (splash) splash.style.display = 'none';" +
                     "  window.smartDownload = function(d, f) { if(window.AndroidBridge) AndroidBridge.downloadFile(d, f, 'Saved'); };" +
                     "  window.saveAs = window.smartDownload;" +
+                    "  if(typeof updateCreditsUI === 'function') updateCreditsUI();" +
                     "})()");
             }
         });
