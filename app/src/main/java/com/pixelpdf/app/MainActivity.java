@@ -136,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
             @Override
             public void onRewardAdLoaded() {
-                ad.show(MainActivity.this, new RewardAdLoadListener() {
+                ad.show(MainActivity.this, new RewardAdStatusListener() {
                     @Override
                     public void onRewarded(Reward r) {
                         webView.loadUrl("javascript:if(window.onAdRewarded) onAdRewarded();");
