@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
+import android.webkit.JsResult;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -16,6 +17,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.huawei.hms.ads.AdParam;
@@ -30,7 +32,6 @@ import java.io.OutputStream;
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
-    
     private static final String AD_REWARDED = "f95ziipjhl";
 
     @Override
@@ -39,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
         HwAds.init(this);
         webView = new WebView(this);
         setContentView(webView);
+
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -59,13 +61,13 @@ public class MainActivity extends AppCompatActivity {
                     if (name.endsWith(".pdf")) mime = "application/pdf";
                     v.put(MediaStore.MediaColumns.MIME_TYPE, mime);
                     if (Build.VERSION.SDK_INT >= 29) v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-                    
+
                     Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
                     if (u != null) {
                         OutputStream o = getContentResolver().openOutputStream(u);
                         o.write(bt);
                         o.close();
-                        runOnUiThread(() -> Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show());
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ Saved to Downloads", Toast.LENGTH_SHORT).show());
                     }
                 } catch (Exception e) {
                     runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
@@ -76,9 +78,26 @@ public class MainActivity extends AppCompatActivity {
             public void showRewardedAd() {
                 runOnUiThread(() -> loadRewarded());
             }
+
+            @JavascriptInterface
+            public void buyPro() {
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "In-App Purchases coming soon!", Toast.LENGTH_SHORT).show());
+            }
         }, "AndroidBridge");
 
+        // اخفاء عنوان file:// وإظهار Alert نقي
         webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+                new AlertDialog.Builder(MainActivity.this)
+                    .setMessage(message)
+                    .setPositiveButton(android.R.string.ok, (dialog, which) -> result.confirm())
+                    .setCancelable(false)
+                    .create()
+                    .show();
+                return true;
+            }
+
             @Override
             public boolean onShowFileChooser(WebView w, ValueCallback<Uri[]> f, FileChooserParams p) {
                 filePathCallback = f;
@@ -94,19 +113,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadRewarded() {
+        Toast.makeText(this, "Loading Huawei Ad...", Toast.LENGTH_SHORT).show();
         RewardAd ad = new RewardAd(this, AD_REWARDED);
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
             public void onRewardAdLoaded() {
                 ad.show(MainActivity.this, new RewardAdStatusListener() {
                     public void onRewardAdOpened() {}
-                    public void onRewardAdFailedToShow(int errorCode) {}
+                    public void onRewardAdFailedToShow(int errorCode) {
+                        Toast.makeText(MainActivity.this, "Failed to display ad.", Toast.LENGTH_SHORT).show();
+                    }
                     public void onRewardAdClosed() {}
                     public void onRewarded(Reward r) {
-                        webView.loadUrl("javascript:if(window.onAdRewarded) onAdRewarded();");
+                        webView.loadUrl("javascript:if(window.onAdRewarded) window.onAdRewarded();");
                     }
                 });
             }
-            public void onRewardAdFailedToLoad(int errorCode) {}
+            public void onRewardAdFailedToLoad(int errorCode) {
+                Toast.makeText(MainActivity.this, "No Ads available right now (Code " + errorCode + ")", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
