@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                 }
             }
+
             @JavascriptInterface
             public void showRewardedAd() {
                 runOnUiThread(() -> loadRewarded());
