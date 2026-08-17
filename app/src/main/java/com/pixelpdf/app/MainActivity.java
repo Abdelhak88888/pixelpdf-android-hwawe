@@ -18,15 +18,26 @@ import android.webkit.WebViewClient;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import com.huawei.hms.ads.HwAds;
+import com.huawei.hms.ads.AdParam;
+import com.huawei.hms.ads.reward.Reward;
+import com.huawei.hms.ads.reward.RewardAd;
+import com.huawei.hms.ads.reward.RewardAdLoadListener;
+import com.huawei.hms.ads.reward.RewardAdStatusListener;
+import com.huawei.hms.iap.Iap;
+import com.huawei.hms.iap.entity.PurchaseIntentReq;
 import java.io.OutputStream;
 
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
+    private static final String AD_REWARDED = "f95ziipjhl";
+    private static final int REQ_CODE_BUY = 6666;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try { HwAds.init(this); } catch (Exception e) {}
         webView = new WebView(this);
         setContentView(webView);
         WebSettings s = webView.getSettings();
@@ -37,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void downloadFile(String b64, String name, String msg) { saveFile(b64, name, msg); }
+            @JavascriptInterface
+            public void showRewardedAd() { runOnUiThread(() -> loadRewarded()); }
+            @JavascriptInterface
+            public void buyProduct(String pid) { runOnUiThread(() -> startPurchase(pid)); }
         }, "Android");
 
         webView.setWebChromeClient(new WebChromeClient() {
@@ -63,6 +78,9 @@ public class MainActivity extends AppCompatActivity {
                     "    const el = document.getElementById('ocr-text-result');" +
                     "    if (el) { Android.downloadFile('data:text/plain;base64,' + btoa(unescape(encodeURIComponent(el.innerText))), 'ocr_result.txt', 'TXT Saved'); }" +
                     "  };" +
+                    "  window.watchAd = function() { Android.showRewardedAd(); };" +
+                    "  window.buyCredits = function(a, p) { Android.buyProduct('credits_' + a); };" +
+                    "  window.openUpgradeModal = function() { Android.buyProduct('pro_version'); };" +
                     "})()");
             }
         });
@@ -82,6 +100,28 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {}
     }
 
+    private void loadRewarded() {
+        Toast.makeText(this, \"Connecting to Ad Server...\", Toast.LENGTH_SHORT).show();
+        RewardAd ad = new RewardAd(this, AD_REWARDED);
+        ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
+            @Override
+            public void onRewardAdLoaded() { ad.show(MainActivity.this, new RewardAdStatusListener() {
+                @Override
+                public void onRewarded(Reward r) { webView.loadUrl(\"javascript:grantReward();\"); }
+            }); }
+            @Override
+            public void onRewardAdFailedToLoad(int code) { 
+                Toast.makeText(MainActivity.this, \"Ad not ready yet (Code: \" + code + \")\", Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    private void startPurchase(String pid) {
+        Iap.getIapClient(this).createPurchaseIntent(new PurchaseIntentReq(){{setProductId(pid);setPriceType(0);}})
+        .addOnSuccessListener(res -> { try { res.getStatus().startResolutionForResult(MainActivity.this, REQ_CODE_BUY); } catch (Exception e) {} })
+        .addOnFailureListener(e -> Toast.makeText(this, \"Huawei IAP Error\", Toast.LENGTH_SHORT).show());
+    }
+
     @Override
     protected void onActivityResult(int r, int c, Intent d) {
         if (r == 1 && filePathCallback != null) {
@@ -90,6 +130,9 @@ public class MainActivity extends AppCompatActivity {
                 else if (d.getData() != null) res = new Uri[]{d.getData()};
             }
             filePathCallback.onReceiveValue(res); filePathCallback = null;
+        } else if (r == REQ_CODE_BUY && c == RESULT_OK) { 
+            Toast.makeText(this, \"✅ Purchase Successful!\", Toast.LENGTH_LONG).show(); 
+            webView.loadUrl(\"javascript:(function(){ isPro=true; localStorage.setItem('pixelpdf_pro','true'); updateCreditsUI(); closePlanModal(); })();\");
         } else super.onActivityResult(r, c, d);
     }
 }
