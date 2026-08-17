@@ -76,12 +76,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView v, String u) {
                 v.loadUrl("javascript:(function() {" +
-                    "window.downloadGeneratedFile = function(d, n) { AndroidBridge.downloadFile(d, n, 'Saved'); };" +
-                    "window.saveAs = function(b, n) { var r = new FileReader(); r.onloadend = function() { AndroidBridge.downloadFile(r.result, n, 'Saved'); }; r.readAsDataURL(b); };" +
-                    "window.watchAd = function() { AndroidBridge.showRewardedAd(); };" +
-                    "window.checkAndShowInterstitial = function() { AndroidBridge.showInterstitialAd(); };" +
-                    "window.buyCredits = function(a, p) { AndroidBridge.buyProduct('credits_' + a); };" +
-                    "window.openUpgradeModal = function() { AndroidBridge.buyProduct('pro_version'); };" +
+                    "  window.smartDownload = function(data, filename) {" +
+                    "    if (window.AndroidBridge) { AndroidBridge.downloadFile(data, filename, 'Saved successfully'); }" +
+                    "  };" +
+                    "  window.saveAs = window.smartDownload;" +
+                    "  window.watchAd = function() { AndroidBridge.showRewardedAd(); };" +
+                    "  window.checkAndShowInterstitial = function() { AndroidBridge.showInterstitialAd(); };" +
+                    "  window.buyCredits = function(a, p) { AndroidBridge.buyProduct('credits_' + a); };" +
+                    "  window.openUpgradeModal = function() { AndroidBridge.buyProduct('pro_version'); };" +
                     "})()");
             }
         });
