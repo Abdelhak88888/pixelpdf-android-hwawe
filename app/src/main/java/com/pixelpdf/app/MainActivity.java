@@ -1,5 +1,4 @@
 package com.pixelpdf.app;
-import com.huawei.hms.ads.reward.RewardAdStatusListener;
 
 import android.content.ContentValues;
 import android.content.Intent;
@@ -21,10 +20,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.huawei.hms.ads.AdParam;
 import com.huawei.hms.ads.HwAds;
-import com.huawei.hms.ads.InterstitialAd;
 import com.huawei.hms.ads.reward.Reward;
 import com.huawei.hms.ads.reward.RewardAd;
 import com.huawei.hms.ads.reward.RewardAdLoadListener;
+import com.huawei.hms.ads.reward.RewardAdStatusListener;
 
 import java.io.OutputStream;
 
@@ -32,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     
-    // Huawei Ad Unit IDs
     private static final String AD_REWARDED = "f95ziipjhl";
     private static final String AD_SPLASH = "n16zcrjokr";
     private static final String AD_BANNER = "c3mwj5uc1a";
@@ -41,13 +39,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // Init HMS Ads
         HwAds.init(this);
-        
         webView = new WebView(this);
         setContentView(webView);
-        
         WebSettings s = webView.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
@@ -68,10 +62,8 @@ public class MainActivity extends AppCompatActivity {
                     if (name.endsWith(".pdf")) mime = "application/pdf";
                     else if (name.endsWith(".txt")) mime = "text/plain";
                     else if (name.endsWith(".jpg") || name.endsWith(".jpeg")) mime = "image/jpeg";
-                    
                     v.put(MediaStore.MediaColumns.MIME_TYPE, mime);
                     if (Build.VERSION.SDK_INT >= 29) v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-                    
                     Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
                     if (u != null) {
                         OutputStream o = getContentResolver().openOutputStream(u);
@@ -83,7 +75,6 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(() -> Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                 }
             }
-
             @JavascriptInterface
             public void showRewardedAd() {
                 runOnUiThread(() -> loadRewarded());
@@ -128,7 +119,6 @@ public class MainActivity extends AppCompatActivity {
                     "})()");
             }
         });
-
         webView.loadUrl("file:///android_asset/index.html");
     }
 
@@ -138,12 +128,16 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onRewardAdLoaded() {
                 ad.show(MainActivity.this, new RewardAdStatusListener() {
-                    @Override
+                    public void onRewardAdOpened() {}
+                    public void onRewardAdFailedToShow(int errorCode) {}
+                    public void onRewardAdClosed() {}
                     public void onRewarded(Reward r) {
                         webView.loadUrl("javascript:if(window.onAdRewarded) onAdRewarded();");
                     }
                 });
             }
+            @Override
+            public void onRewardAdFailedToLoad(int errorCode) {}
         });
     }
 
