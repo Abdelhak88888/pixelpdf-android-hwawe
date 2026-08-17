@@ -32,7 +32,6 @@ import java.io.OutputStream;
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
-    
     private static final String AD_REWARDED = "f95ziipjhl";
 
     @Override
