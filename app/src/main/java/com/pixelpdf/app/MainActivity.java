@@ -32,9 +32,6 @@ public class MainActivity extends AppCompatActivity {
     private ValueCallback<Uri[]> filePathCallback;
     
     private static final String AD_REWARDED = "f95ziipjhl";
-    private static final String AD_SPLASH = "n16zcrjokr";
-    private static final String AD_BANNER = "c3mwj5uc1a";
-    private static final String AD_INTERSTITIAL = "w07e1f28c6";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,10 +57,9 @@ public class MainActivity extends AppCompatActivity {
                     v.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
                     String mime = "application/octet-stream";
                     if (name.endsWith(".pdf")) mime = "application/pdf";
-                    else if (name.endsWith(".txt")) mime = "text/plain";
-                    else if (name.endsWith(".jpg") || name.endsWith(".jpeg")) mime = "image/jpeg";
                     v.put(MediaStore.MediaColumns.MIME_TYPE, mime);
                     if (Build.VERSION.SDK_INT >= 29) v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                    
                     Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
                     if (u != null) {
                         OutputStream o = getContentResolver().openOutputStream(u);
@@ -93,40 +89,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageFinished(WebView v, String u) {
-                v.loadUrl("javascript:(function() { " +
-                    "  function getMsg() { " +
-                    "    var l = document.documentElement.lang || 'en'; " +
-                    "    if(l=='ar') return '✅ تم الحفظ بنجاح'; " +
-                    "    if(l=='fr') return '✅ Enregistré avec succès'; " +
-                    "    return '✅ Saved successfully'; " +
-                    "  } " +
-                    "  window.saveAs = function(b, n) { " +
-                    "    var r = new FileReader(); " +
-                    "    r.onloadend = function() { AndroidBridge.downloadFile(r.result, n, getMsg()); }; " +
-                    "    r.readAsDataURL(b); " +
-                    "  }; " +
-                    "  var old = HTMLAnchorElement.prototype.click; " +
-                    "  HTMLAnchorElement.prototype.click = function() { " +
-                    "    if (this.href.startsWith('blob:') || this.download) { " +
-                    "      var n = this.download || 'file'; " +
-                    "      fetch(this.href).then(r => r.blob()).then(b => { " +
-                    "        var rd = new FileReader(); rd.onloadend = function() { AndroidBridge.downloadFile(rd.result, n, getMsg()); }; rd.readAsDataURL(b); " +
-                    "      }); " +
-                    "    } else old.call(this); " +
-                    "  }; " +
-                    "})()");
-            }
-        });
+        webView.setWebViewClient(new WebViewClient());
         webView.loadUrl("file:///android_asset/index.html");
     }
 
     private void loadRewarded() {
         RewardAd ad = new RewardAd(this, AD_REWARDED);
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
-            @Override
             public void onRewardAdLoaded() {
                 ad.show(MainActivity.this, new RewardAdStatusListener() {
                     public void onRewardAdOpened() {}
@@ -137,7 +106,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
             }
-            @Override
             public void onRewardAdFailedToLoad(int errorCode) {}
         });
     }
