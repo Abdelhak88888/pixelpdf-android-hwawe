@@ -33,9 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     
-    // Ad Unit IDs الحقيقيين من منصة Huawei
     private static final String AD_REWARDED = "f95ziipjhl";
-    private static final String AD_INTERSTITIAL = "w07e1f28c6";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
                         OutputStream o = getContentResolver().openOutputStream(u);
                         o.write(bt);
                         o.close();
-                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ File saved to Downloads", Toast.LENGTH_LONG).show());
+                        runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ Saved to Downloads", Toast.LENGTH_LONG).show());
                     }
                 } catch (Exception e) {
                     runOnUiThread(() -> Toast.makeText(MainActivity.this, "Download error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
@@ -91,8 +89,8 @@ public class MainActivity extends AppCompatActivity {
             @JavascriptInterface
             public void buyPro() {
                 runOnUiThread(() -> new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("In-App Purchases")
-                    .setMessage("Purchases via Huawei IAP will be available once approved.")
+                    .setTitle("PRO Version")
+                    .setMessage("In-App Purchases via Huawei Store will be active soon.")
                     .setPositiveButton("OK", null)
                     .show());
             }
@@ -125,14 +123,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadRewarded() {
-        Toast.makeText(this, "Loading Ad...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Loading Huawei Ad...", Toast.LENGTH_SHORT).show();
         RewardAd ad = new RewardAd(this, AD_REWARDED);
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
             public void onRewardAdLoaded() {
                 ad.show(MainActivity.this, new RewardAdStatusListener() {
                     public void onRewardAdOpened() {}
                     public void onRewardAdFailedToShow(int errorCode) {
-                        Toast.makeText(MainActivity.this, "Ad failed to display.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "Failed to display ad.", Toast.LENGTH_SHORT).show();
                     }
                     public void onRewardAdClosed() {}
                     public void onRewarded(Reward r) {
@@ -141,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
             public void onRewardAdFailedToLoad(int errorCode) {
-                Toast.makeText(MainActivity.this, "No Ads available (Code: " + errorCode + ")", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "No Ads available right now (Code: " + errorCode + ")", Toast.LENGTH_SHORT).show();
             }
         });
     }
