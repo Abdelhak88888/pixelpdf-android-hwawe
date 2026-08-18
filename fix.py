@@ -1,4 +1,9 @@
-package com.pixelpdf.app;
+import os
+
+def fix():
+    # 1. Clean MainActivity.java
+    java_path = 'app/src/main/java/com/pixelpdf/app/MainActivity.java'
+    java_code = """package com.pixelpdf.app;
 
 import android.content.ContentValues;
 import android.content.Intent;
@@ -121,4 +126,22 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "✅ Success!", Toast.LENGTH_SHORT).show();
         } else super.onActivityResult(r, c, d);
     }
-}
+}"""
+    if os.path.exists(java_path):
+        with open(java_path, 'w', encoding='utf-8') as f: f.write(java_code)
+
+    # 2. Fix index.html
+    html_path = 'app/src/main/assets/index.html'
+    if os.path.exists(html_path):
+        with open(html_path, 'r', encoding='utf-8') as f: content = f.read()
+        content = content.replace('id="splash-screen"', 'id="splash-screen" style="display:none !important;"')
+        content = content.replace('🪙 500 نقطة - $0.99', '🪙 500 Credits - $0.99')
+        content = content.replace('🪙 1000 نقطة - $1.99', '🪙 1000 Credits - $1.99')
+        content = content.replace('🪙 3000 نقطة - $4.99', '🪙 3000 Credits - $4.99')
+        content = content.replace('💎 شراء نقاط', '💎 Buy Credits')
+        with open(html_path, 'w', encoding='utf-8') as f: f.write(content)
+
+    print("Success: All fixes applied!")
+
+if __name__ == "__main__":
+    fix()
