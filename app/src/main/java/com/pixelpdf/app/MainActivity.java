@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String AD_REWARDED = "f95ziipjhl";
     private static final int REQ_CODE_BUY = 6666;
 
-    
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         try { HwAds.init(this); } catch (Exception e) {}
@@ -55,13 +55,13 @@ public class MainActivity extends AppCompatActivity {
         }, "Android");
 
         webView.setWebChromeClient(new WebChromeClient() {
-            
+            @Override
             public boolean onJsAlert(WebView v, String u, String m, JsResult r) {
                 new AlertDialog.Builder(MainActivity.this).setTitle("PixelPDF").setMessage(m)
                     .setPositiveButton(android.R.string.ok, (d, w) -> r.confirm()).setCancelable(false).show();
                 return true;
             }
-            
+            @Override
             public boolean onShowFileChooser(WebView w, ValueCallback<Uri[]> f, FileChooserParams p) {
                 filePathCallback = f; Intent i = p.createIntent(); i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                 startActivityForResult(Intent.createChooser(i, "Select Files"), 1); return true;
@@ -80,35 +80,33 @@ public class MainActivity extends AppCompatActivity {
             if (Build.VERSION.SDK_INT >= 29) v.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
             Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, v);
             if (u != null) { OutputStream o = getContentResolver().openOutputStream(u); o.write(bt); o.close();
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "✅ " + msg, Toast.LENGTH_SHORT).show()); }
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, \"✅ \" + msg, Toast.LENGTH_SHORT).show()); }
         } catch (Exception e) {}
     }
 
     private void loadRewarded() {
-        Toast.makeText(this, "Connecting to Ad Server...", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, \"Connecting to Ad Server...\", Toast.LENGTH_SHORT).show();
         RewardAd ad = new RewardAd(this, AD_REWARDED);
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
-            
             public void onRewardAdLoaded() {
                 ad.show(MainActivity.this, new RewardAdStatusListener() {
-                     public void onRewarded(Reward r) { webView.loadUrl("javascript:if(typeof grantReward==='function')grantReward();"); }
-                     public void onRewardAdOpened() {}
-                     public void onRewardAdFailedToShow(int e) {}
-                     public void onRewardAdClosed() {}
+                    public void onRewarded(Reward r) { webView.loadUrl(\"javascript:if(typeof grantReward==='function')grantReward();\"); }
+                    public void onRewardAdOpened() {}
+                    public void onRewardAdFailedToShow(int e) {}
+                    public void onRewardAdClosed() {}
                 });
             }
-            
-            public void onRewardAdFailedToLoad(int e) { Toast.makeText(MainActivity.this, "Ad not ready", Toast.LENGTH_SHORT).show(); }
+            public void onRewardAdFailedToLoad(int e) { Toast.makeText(MainActivity.this, \"Ad not ready\", Toast.LENGTH_SHORT).show(); }
         });
     }
 
     private void startPurchase(String pid) {
         Iap.getIapClient(this).createPurchaseIntent(new PurchaseIntentReq(){{setProductId(pid);setPriceType(0);}})
         .addOnSuccessListener(res -> { try { res.getStatus().startResolutionForResult(MainActivity.this, REQ_CODE_BUY); } catch (Exception e) {} })
-        .addOnFailureListener(e -> Toast.makeText(this, "IAP Error", Toast.LENGTH_SHORT).show());
+        .addOnFailureListener(e -> Toast.makeText(this, \"IAP Error\", Toast.LENGTH_SHORT).show());
     }
 
-    
+    @Override
     protected void onActivityResult(int r, int c, Intent d) {
         if (r == 1 && filePathCallback != null) {
             Uri[] res = null; if (c == RESULT_OK && d != null) {
@@ -117,8 +115,8 @@ public class MainActivity extends AppCompatActivity {
             }
             filePathCallback.onReceiveValue(res); filePathCallback = null;
         } else if (r == REQ_CODE_BUY && c == RESULT_OK) { 
-            webView.loadUrl("javascript:(function(){ isPro=true; localStorage.setItem('pixelpdf_pro','true'); if(typeof updateCreditsUI==='function')updateCreditsUI(); })();");
-            Toast.makeText(this, "✅ Success!", Toast.LENGTH_SHORT).show();
+            webView.loadUrl(\"javascript:(function(){ isPro=true; localStorage.setItem('pixelpdf_pro','true'); if(typeof updateCreditsUI==='function')updateCreditsUI(); })();\");
+            Toast.makeText(this, \"✅ Success!\", Toast.LENGTH_SHORT).show();
         } else super.onActivityResult(r, c, d);
     }
 }
