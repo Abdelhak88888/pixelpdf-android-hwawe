@@ -2,7 +2,6 @@ package com.pixelpdf.app;
 
 import android.content.ContentValues;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -37,10 +36,10 @@ public class MainActivity extends AppCompatActivity {
     private static final String AD_INTERSTITIAL = "w07e1f28c6";
     private static final int REQ_CODE_BUY = 6666;
 
-    
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        try { HwAds.init(this); } catch (Exception e) {}
+        HwAds.init(this);
         webView = new WebView(this);
         setContentView(webView);
         WebSettings s = webView.getSettings();
@@ -60,20 +59,20 @@ public class MainActivity extends AppCompatActivity {
         }, "Android");
 
         webView.setWebChromeClient(new WebChromeClient() {
-            
+            @Override
             public boolean onJsAlert(WebView v, String u, String m, JsResult r) {
                 new AlertDialog.Builder(MainActivity.this).setTitle("PixelPDF").setMessage(m)
                     .setPositiveButton(android.R.string.ok, (d, w) -> r.confirm()).setCancelable(false).show();
                 return true;
             }
-            
+            @Override
             public boolean onJsConfirm(WebView v, String u, String m, JsResult r) {
                 new AlertDialog.Builder(MainActivity.this).setTitle("PixelPDF").setMessage(m)
                     .setPositiveButton(android.R.string.ok, (d, w) -> r.confirm())
                     .setNegativeButton(android.R.string.cancel, (d, w) -> r.cancel()).setCancelable(false).show();
                 return true;
             }
-            
+            @Override
             public boolean onShowFileChooser(WebView w, ValueCallback<Uri[]> f, FileChooserParams p) {
                 filePathCallback = f; Intent i = p.createIntent(); i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
                 startActivityForResult(Intent.createChooser(i, "Select Files"), 1); return true;
@@ -81,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         webView.setWebViewClient(new WebViewClient() {
-            
+            @Override
             public void onPageFinished(WebView v, String u) {
                 v.loadUrl("javascript:(function() {" +
                     "  window.smartDownload = function(data, filename) {" +
@@ -92,10 +91,6 @@ public class MainActivity extends AppCompatActivity {
                     "    const text = document.getElementById('ocr-text-result').innerText;" +
                     "    if (fmt === 'txt') { Android.downloadFile('data:text/plain;base64,' + btoa(unescape(encodeURIComponent(text))), 'ocr_result.txt', 'TXT Saved'); }" +
                     "    else { window.print(); }" +
-                    "  };" +
-                    "  window.downloadPdfEditExtractedText = function() {" +
-                    "    const text = document.getElementById('pdfedit-extracttext-result').textContent;" +
-                    "    Android.downloadFile('data:text/plain;base64,' + btoa(unescape(encodeURIComponent(text))), 'extracted_text.txt', 'TXT Saved');" +
                     "  };" +
                     "  window.watchAd = function() { Android.showRewardedAd(); };" +
                     "  window.checkAndShowInterstitial = function() { Android.showInterstitialAd(); };" +
@@ -130,12 +125,12 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(this, "Connecting to Ad Server...", Toast.LENGTH_SHORT).show();
         RewardAd ad = new RewardAd(this, AD_REWARDED);
         ad.loadAd(new AdParam.Builder().build(), new RewardAdLoadListener() {
-            
+            @Override
             public void onRewardAdLoaded() { ad.show(MainActivity.this, new RewardAdStatusListener() {
-                
+                @Override
                 public void onRewarded(Reward r) { webView.loadUrl("javascript:grantReward();"); }
             }); }
-            
+            @Override
             public void onRewardAdFailedToLoad(int code) { 
                 Toast.makeText(MainActivity.this, "Ad not ready yet (Code: " + code + ")", Toast.LENGTH_LONG).show();
             }
@@ -146,8 +141,10 @@ public class MainActivity extends AppCompatActivity {
         InterstitialAd ad = new InterstitialAd(this); ad.setAdId(AD_INTERSTITIAL);
         ad.loadAd(new AdParam.Builder().build());
         ad.setAdListener(new com.huawei.hms.ads.AdListener() {
-            
+            @Override
             public void onAdLoaded() { if (ad.isLoaded()) ad.show(MainActivity.this); }
+        });
+    }
 
     private void startPurchase(String pid) {
         Iap.getIapClient(this).createPurchaseIntent(new PurchaseIntentReq(){{setProductId(pid);setPriceType(0);}})
@@ -155,7 +152,7 @@ public class MainActivity extends AppCompatActivity {
         .addOnFailureListener(e -> Toast.makeText(this, "Huawei IAP Error", Toast.LENGTH_SHORT).show());
     }
 
-    
+    @Override
     protected void onActivityResult(int r, int c, Intent d) {
         if (r == 1 && filePathCallback != null) {
             Uri[] res = null; if (c == RESULT_OK && d != null) {
